@@ -5,11 +5,13 @@ import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import cookieParser from "cookie-parser";
 import mongoose from 'mongoose'; 
+import cors from "cors"
 
 
 const app = express();
 app.use(express.json());
 app.use(cookieParser()); // Middleware to parse cookies
+app.use(cors())
 
 const SECRET_KEY = process.env.SECRET_KEY; // Use environment variable
 
@@ -59,6 +61,7 @@ app.get("/", (req, res) => {
 app.post("/register", async (req, res) => {
   try {
     const { firstName, lastName, email, password } = req.body;
+    console.log(firstName,lastName,email,password)
 
     // Check if the user with the same email already exists
     const existingUser = await User.findOne({ email });
@@ -367,6 +370,11 @@ app.get("/getstudentdeldata", authTokenMiddleWare, async (req, res) => {
     const isAuthorized = loggedInUser.students.some(
       (studentId) => studentId.toString() === studentToBeFound._id.toString()
     );
+    // can use this method too
+    // const foundStudent = loggedInUser.students.find(
+    //   (studentId) => studentId.toString() === studentToBeFound._id.toString()
+    // );
+   
 
     if (!isAuthorized) {
       return res.status(403).json({
