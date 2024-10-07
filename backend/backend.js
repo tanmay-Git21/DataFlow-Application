@@ -1,56 +1,70 @@
 import express from "express";
 import { connectDb } from "./db/dbconfig.js";
-import { User, Student } from "./models/user.js"; 
+import { User, Student } from "./models/user.js";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import cookieParser from "cookie-parser";
-import mongoose from 'mongoose'; 
-import cors from "cors"
-
+import mongoose from "mongoose";
+import cors from "cors";
 
 const app = express();
 app.use(express.json());
 app.use(cookieParser()); // Middleware to parse cookies
-app.use(cors())
+app.use(
+  cors({
+    origin: "http://localhost:5173", // Replace with your frontend origin
+    credentials: true, // Allow cookies to be sent
+  })
+);
 
 const SECRET_KEY = process.env.SECRET_KEY; // Use environment variable
 
 // Middleware to authenticate and attach the user to req
 const authTokenMiddleWare = async (req, res, next) => {
-  const token = req.cookies.token;
-  if (!token) {
-    return res.status(400).json({
+  console.log("in auth")
+  const token = req.cookies.token; // Retrieve token from cookies
+  console.log("Token: ", token);
+
+
+  
+  if (!token ) {
+    return res.status(401).json({
       success: false,
       message: "Token not found. Please log in.",
     });
   }
-
+  
   try {
-    // Verify token
-    jwt.verify(token, SECRET_KEY, async (err, decodedToken) => {
-      if (err) {
-        return res
-          .status(400)
-          .json({ success: false, message: "The token is invalid." });
-      }
+    // Verify the JWT token
+    const decodedToken = jwt.verify(token, SECRET_KEY); // Verify token synchronously
+    
+    // Find the user from the token's payload
+    const loggedInUser = await User.findById(decodedToken.id);
+    
+    if (!loggedInUser) {
+      return res.status(401).json({
+        success: false,
+        message: "User not found. Please log in again.",
+      });
+    }
 
-      // Find the user from the token's payload
-      const loggedInUser = await User.findById(decodedToken.id);
-      if (!loggedInUser) {
-        return res.status(400).json({
-          success: false,
-          message: "User not found. Please log in again.",
-        });
-      }
-
-      // Attach user to the request object
-      req.loggedInUser = loggedInUser;
-      next(); // Continue to the next middleware or route handler
-    });
+    // Attach the user to the request object for further use
+    req.loggedInUser = loggedInUser;
+    
+    // Proceed to the next middleware or route handler
+    next();
   } catch (err) {
-    return res.status(500).json({ success: false, message: "Server error." });
+    // Handle invalid token or any other error
+    console.error("Authentication error: ", err);
+    return res.status(403).json({
+      success: false,
+      message: "Invalid token or authentication error.",
+    });
   }
 };
+
+
+
 
 // Default route
 app.get("/", (req, res) => {
@@ -61,7 +75,7 @@ app.get("/", (req, res) => {
 app.post("/register", async (req, res) => {
   try {
     const { firstName, lastName, email, password } = req.body;
-    console.log(firstName,lastName,email,password)
+    console.log(firstName, lastName, email, password);
 
     // Check if the user with the same email already exists
     const existingUser = await User.findOne({ email });
@@ -125,31 +139,30 @@ app.post("/login", async (req, res) => {
     }
 
     // Generate JWT token
-    const payload = {
-      id: existingUser._id,
-      email: `${existingUser.email}`,
-    };
-
+    const payload = { id: existingUser._id, email: existingUser.email };
     const token = jwt.sign(payload, SECRET_KEY, { expiresIn: "3h" });
 
     // Set token in cookies (httpOnly and secure)
     res.cookie("token", token, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === "production", // Secure only in production
-      sameSite: "strict",
+      secure: process.env.NODE_ENV === "production", // Secure in production with HTTPS
+      sameSite: "lax", // Consider 'None' for cross-site requests, especially in production
       maxAge: 3600000, // 1 hour
     });
 
     // Send success response
     res.status(200).json({ success: true, message: "Login successful" });
   } catch (err) {
-    res.status(500).json({
-      success: false,
-      message: "Something went wrong",
-      error: err.message,
-    });
+    res
+      .status(500)
+      .json({
+        success: false,
+        message: "Something went wrong",
+        error: err.message,
+      });
   }
 });
+
 // Route to create a student
 app.post("/createStudent", authTokenMiddleWare, async (req, res) => {
   try {
@@ -161,6 +174,7 @@ app.post("/createStudent", authTokenMiddleWare, async (req, res) => {
       studentEmail,
     } = req.body;
 
+    console.log(studentEmail);
     // Check if the student email is unique
     const existingStudent = await Student.findOne({ studentEmail });
     if (existingStudent) {
@@ -374,7 +388,6 @@ app.get("/getstudentdeldata", authTokenMiddleWare, async (req, res) => {
     // const foundStudent = loggedInUser.students.find(
     //   (studentId) => studentId.toString() === studentToBeFound._id.toString()
     // );
-   
 
     if (!isAuthorized) {
       return res.status(403).json({
@@ -420,7 +433,9 @@ app.delete("/deletestudent", authTokenMiddleWare, async (req, res) => {
 
     // If student is not found, return an error
     if (!deletedStudent) {
-      return res.status(404).json({ success: false, message: "Student not found." });
+      return res
+        .status(404)
+        .json({ success: false, message: "Student not found." });
     }
 
     // Send back the deleted student acknowledgment
@@ -433,7 +448,6 @@ app.delete("/deletestudent", authTokenMiddleWare, async (req, res) => {
     });
   }
 });
-
 
 // Start server
 app.listen(3000, () => {

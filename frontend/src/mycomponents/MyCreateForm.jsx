@@ -10,7 +10,6 @@ const StudentInformationForm = () => {
   const [studentAge, setStudentAge] = useState("");
   const [studentPhoneNumber, setStudentPhoneNumber] = useState("");
   const [studentEmail, setStudentEmail] = useState("");
-  const [errorMessage, setErrorMessage] = useState("");
 
   const handleFormSubmit = async (e) => {
     e.preventDefault();
@@ -27,15 +26,6 @@ const StudentInformationForm = () => {
       return;
     }
 
-    // Simulated uniqueness check for studentEmail (you can replace with actual backend logic)
-    const existingEmails = ["existing@example.com", "test@example.com"];
-    if (existingEmails.includes(studentEmail)) {
-      setErrorMessage("Email is already registered.");
-      return;
-    }
-
-    setErrorMessage("");
-
     // Collect form data (you can then send this to your backend)
     const formData = {
       studentFirstName,
@@ -45,13 +35,41 @@ const StudentInformationForm = () => {
       studentEmail,
     };
 
-    console.log("Form Submitted", formData);
+    try {
+      // API call to backend to save the student form data
+      const response = await fetch("http://localhost:3000/createstudent", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        credentials: "include", // This will include cookies in the request
+        body: JSON.stringify(formData),
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        console.log("User logged in: ", result);
+        // Handle success (e.g., redirect to login or show success message)
+        console.log("Student created and saved successfully");
+      } else {
+        console.error(
+          "Had some issue while saving student:",
+          response.statusText
+        );
+        // Handle error (e.g., show error message to user)
+      }
+    } catch (error) {
+      console.error("Error occured", error);
+      // Handle error (e.g., show error message to user)
+    }
   };
 
   return (
     <Card className="w-full max-w-md bg-zinc-900 text-white p-6 mx-auto">
       <CardHeader>
-        <CardTitle className="text-left text-2xl">Student Information</CardTitle>
+        <CardTitle className="text-left text-2xl">
+          Student Information
+        </CardTitle>
       </CardHeader>
       <CardContent>
         <form onSubmit={handleFormSubmit} className="space-y-4">
@@ -107,9 +125,7 @@ const StudentInformationForm = () => {
               required
             />
           </div>
-          {errorMessage && (
-            <p className="text-red-500 text-sm">{errorMessage}</p>
-          )}
+
           <Button type="submit" className="w-full">
             Submit
           </Button>

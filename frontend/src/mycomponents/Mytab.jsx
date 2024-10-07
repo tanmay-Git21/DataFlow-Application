@@ -19,47 +19,42 @@ const Mytab = () => {
   const lastNameRef = useRef("");
   const emailRef = useRef("");
   const registerPasswordRef = useRef("");
-  const loginEmailRef = useRef("")
-  const loginPasswordRef = useRef("")
+  const loginEmailRef = useRef("");
+  const loginPasswordRef = useRef("");
 
-  const navigate = useNavigate()
-
+  const navigate = useNavigate();
   const handleLoginFormSubmit = async (e) => {
     e.preventDefault();
-   const email = loginEmailRef.current.value
-   const password = loginPasswordRef.current.value
+    const email = loginEmailRef.current.value;
+    const password = loginPasswordRef.current.value;
 
-   if ( !email || !password) {
-    alert("Please fill out all fields.");
-    return;
-  }
-
-  const loginFormData = {email,password}
-
-  try {
-    // API call to backend to register the user
-    const response = await fetch("http://localhost:3000/login", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(loginFormData),
-    });
-
-    if (response.ok) {
-      const result = await response.json();
-      console.log("User logged in: ", result);
-      // Handle success (e.g., redirect to login or show success message)
-      navigate("/actions")
-    } else {
-      console.error("Failed to register user:", response.statusText);
-      // Handle error (e.g., show error message to user)
+    if (!email || !password) {
+      alert("Please fill out all fields.");
+      return;
     }
-  } catch (error) {
-    console.error("Error during registration:", error);
-    // Handle error (e.g., show error message to user)
-  }
 
+    const loginFormData = { email, password };
+
+    try {
+      const response = await fetch("http://localhost:3000/login", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        credentials: "include", // This ensures cookies are sent and received
+        body: JSON.stringify(loginFormData),
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        console.log("User logged in: ", result);
+        navigate("/actions");
+      } else {
+        console.error("Failed to login:", response.statusText);
+      }
+    } catch (error) {
+      console.error("Error during login:", error);
+    }
   };
 
   const handleRegisterFormSubmit = async (e) => {
@@ -99,7 +94,7 @@ const Mytab = () => {
       if (response.ok) {
         const result = await response.json();
         console.log("User registered:", result);
-        return redirect("/actions")
+        return redirect("/actions");
         // Handle success (e.g., redirect to login or show success message)
       } else {
         console.error("Failed to register user:", response.statusText);
@@ -112,35 +107,43 @@ const Mytab = () => {
   };
 
   return (
-    <Tabs defaultValue="login" className="w-[600px]" >
+    <Tabs defaultValue="login" className="w-[600px]">
       <TabsList className="grid w-full grid-cols-2">
-        <TabsTrigger value="login" >Login</TabsTrigger>
+        <TabsTrigger value="login">Login</TabsTrigger>
         <TabsTrigger value="register">Register</TabsTrigger>
       </TabsList>
 
       <TabsContent value="login">
-        <form onSubmit={handleLoginFormSubmit} >
-        <Card>
-          <CardHeader>
-            <CardTitle>Login</CardTitle>
-            <CardDescription>Please enter your credentials</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-2">
-            <div className="space-y-1">
-              <Label htmlFor="loginEmail">Email</Label>
-              <Input id="loginEmail" placeholder="Enter your email" ref={loginEmailRef} />
-            </div>
-            <div className="space-y-1">
-              <Label htmlFor="loginPassword">Password</Label>
-              <Input id="loginPassword" placeholder="Enter your password" ref={loginPasswordRef} />
-            </div>
-          </CardContent>
-          <CardFooter>
-            <Button type="submit" className="w-full">
-              Login
-            </Button>
-          </CardFooter>
-        </Card>
+        <form onSubmit={handleLoginFormSubmit}>
+          <Card>
+            <CardHeader>
+              <CardTitle>Login</CardTitle>
+              <CardDescription>Please enter your credentials</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-2">
+              <div className="space-y-1">
+                <Label htmlFor="loginEmail">Email</Label>
+                <Input
+                  id="loginEmail"
+                  placeholder="Enter your email"
+                  ref={loginEmailRef}
+                />
+              </div>
+              <div className="space-y-1">
+                <Label htmlFor="loginPassword">Password</Label>
+                <Input
+                  id="loginPassword"
+                  placeholder="Enter your password"
+                  ref={loginPasswordRef}
+                />
+              </div>
+            </CardContent>
+            <CardFooter>
+              <Button type="submit" className="w-full">
+                Login
+              </Button>
+            </CardFooter>
+          </Card>
         </form>
       </TabsContent>
 
