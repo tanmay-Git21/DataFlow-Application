@@ -1,4 +1,5 @@
 import { Button } from "@/components/ui/button";
+import { useNavigate } from "react-router-dom";
 import {
   Card,
   CardContent,
@@ -11,6 +12,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useRef } from "react";
+import { redirect } from "react-router-dom";
 
 const Mytab = () => {
   const firstNameRef = useRef("");
@@ -19,6 +21,8 @@ const Mytab = () => {
   const registerPasswordRef = useRef("");
   const loginEmailRef = useRef("")
   const loginPasswordRef = useRef("")
+
+  const navigate = useNavigate()
 
   const handleLoginFormSubmit = async (e) => {
     e.preventDefault();
@@ -46,6 +50,7 @@ const Mytab = () => {
       const result = await response.json();
       console.log("User logged in: ", result);
       // Handle success (e.g., redirect to login or show success message)
+      navigate("/actions")
     } else {
       console.error("Failed to register user:", response.statusText);
       // Handle error (e.g., show error message to user)
@@ -94,6 +99,7 @@ const Mytab = () => {
       if (response.ok) {
         const result = await response.json();
         console.log("User registered:", result);
+        return redirect("/actions")
         // Handle success (e.g., redirect to login or show success message)
       } else {
         console.error("Failed to register user:", response.statusText);
