@@ -22,7 +22,7 @@ const ReadData = () => {
 
         if (response.ok) {
           const result = await response.json();
-          console.log("Student data: ", result);
+          console.log("Student data: ", result.students[0]);
           setStudents(result); // Update state with fetched student data
         } else {
           console.error("Had some issue while getting student:", response.statusText);
@@ -45,7 +45,7 @@ const ReadData = () => {
         Get Students
       </Button>
 
-      {/* Render students data if available */}
+      
       {students.length > 0 && (
         <div className="col-span-4">
           <h2 className="text-white">Student List:</h2>

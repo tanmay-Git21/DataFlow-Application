@@ -21,6 +21,8 @@ const SECRET_KEY = process.env.SECRET_KEY; // Use environment variable
 
 // Middleware to authenticate and attach the user to req
 const authTokenMiddleWare = async (req, res, next) => {
+  console.log("inauth")
+  console.log("in auth")
   console.log("in auth")
   const token = req.cookies.token; // Retrieve token from cookies
   console.log("Token: ", token);
@@ -295,16 +297,10 @@ app.post("/getstudent", authTokenMiddleWare, async (req, res) => {
 
 app.put("/updatestudent", authTokenMiddleWare, async (req, res) => {
   try {
-    const {
-      studentId,
-      studentFirstName,
-      studentLastName,
-      studentAge,
-      studentPhoneNumber,
-      studentEmail,
-    } = req.body;
+    console.log("in updateStudent API")
+    const { studentId, studentFirstName, studentLastName, studentAge, studentPhoneNumber, studentEmail } = req.body;
+    
 
-    // Validate that the studentId is provided
     if (!studentId) {
       return res.status(400).json({
         success: false,
@@ -312,57 +308,39 @@ app.put("/updatestudent", authTokenMiddleWare, async (req, res) => {
       });
     }
 
-    // dont know why this is giving error something to do with id comparision line will deal later
-    // // Check if the logged-in user is authorized to update this student
-    // const loggedInUser = req.loggedInUser;
-    // const isAuthorized = loggedInUser.students.some(
-    //   (studentId) => studentId.toString() === studentId.toString()
-
-    // );
-    // if (!isAuthorized) {
-    //   return res
-    //     .status(403)
-    //     .json({
-    //       success: false,
-    //       message: "You are not authorized to update this student.",
-    //     });
-    // }
-
-    // Create an update object
-    const updatedData = {
-      studentFirstName,
-      studentLastName,
-      studentAge,
-      studentPhoneNumber,
-      studentEmail,
-    };
-
-    // Find the student by ID and update it
-    const updatedStudent = await Student.findByIdAndUpdate(
-      studentId,
-      updatedData,
-      { new: true }
+    // Authorization check (comparing userId with studentId)
+    const isAuthorized = req.loggedInUser.students.some(
+      (id) => id.toString() === studentId.toString()
     );
 
-    // If student is not found, return an error
-    if (!updatedStudent) {
-      return res
-        .status(404)
-        .json({ success: false, message: "Student not found." });
+    if (!isAuthorized) {
+      return res.status(403).json({
+        success: false,
+        message: "You are not authorized to update this student.",
+      });
     }
 
-    // Send back the updated student information
+    // Update student details
+    const updatedData = { studentFirstName, studentLastName, studentAge, studentPhoneNumber, studentEmail };
+    console.log(updatedData)
+    const updatedStudent = await Student.findByIdAndUpdate(studentId, updatedData, { new: true });
+
+    if (!updatedStudent) {
+      return res.status(404).json({ success: false, message: "Student not found." });
+    }
+
     return res.status(200).json({ success: true, student: updatedStudent });
   } catch (err) {
     return res.status(500).json({
       success: false,
-      message: "Something went wrong while updating the student.",
+      message: "Error occurred while updating the student.",
       error: err.message,
     });
   }
 });
 
-app.get("/getstudentdeldata", authTokenMiddleWare, async (req, res) => {
+
+app.post("/getstudentdeldata", authTokenMiddleWare, async (req, res) => {
   try {
     const studentEmail = req.body.studentEmail; // Get the student email from the request body
     const loggedInUser = req.loggedInUser; // Get the logged-in user from middleware
